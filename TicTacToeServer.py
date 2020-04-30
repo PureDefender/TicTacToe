@@ -8,7 +8,6 @@ server_ip = '127.0.0.1'
 server_port = 25560
 board = [None] * 9
 current_player = None
-threads = []
 client_lock = threading.Lock()
 
 
@@ -60,6 +59,10 @@ def winner():
                    board[2] is not None and board[2] == board[4] and board[2] == board[6])
 
 
+def RunPlayer(conn, client_ip, client_port, symbol):
+    PlayerThread(conn, client_ip, client_port, symbol).start()
+
+
 class PlayerThread(Thread):
     opponent = None
     player_input = None
@@ -108,8 +111,9 @@ class PlayerThread(Thread):
 
 
 def main():
-    global server_ip, server_port, threads
+    global server_ip, server_port
 
+    count = False
     read_arguments()
     server_address = (server_ip, server_port)
 
@@ -118,19 +122,15 @@ def main():
     sock.bind(server_address)
     print('Server now running on ' + server_ip + ':' + str(server_port))
 
-    while len(threads) < 2:
-        sock.listen(5)
+    while True:
+        sock.listen(1000)
         print('Waiting for players to join...')
         (conn, (client_ip, client_port)) = sock.accept()
-        if len(threads) == 1:
-            new_thread = PlayerThread(conn, client_ip, client_port, 'X')
+        if not count:
+            threading.Thread(target=RunPlayer, args=[conn, client_ip, client_port, 'X']).start()
+            count = True
         else:
-            new_thread = PlayerThread(conn, client_ip, client_port, 'O')
-        new_thread.start()
-        threads.append(new_thread)
-
-    for t in threads:
-        t.join()
+            threading.Thread(target=RunPlayer, args='O').start()
 
 
 if __name__ == '__main__':
