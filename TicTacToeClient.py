@@ -23,9 +23,10 @@ class ClientInterface:
             print()
 
 class TicTacToeClient:
-    def __init__(self, server_address):
-        #super().__init__()
-        self.conn = socket.create_connection(server_address)
+    def __init__(self, address, port):
+        self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_address = (address, int(port))
+        self.conn.connect(server_address)
         self.io = ClientInterface()
         self.board = ['+'] * 9
     
@@ -97,6 +98,5 @@ if __name__ == "__main__":
     if len(sys.argv) != 3:
         print('Usage:\n'+ sys.argv[0] + ' server_ip server_port')
         sys.exit()
-    address = (sys.argv[1], sys.argv[2])
-    client = TicTacToeClient(address)
+    client = TicTacToeClient(sys.argv[1], sys.argv[2])
     client.play()

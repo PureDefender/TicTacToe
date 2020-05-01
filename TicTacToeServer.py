@@ -97,7 +97,7 @@ class PlayerThread:
                 if self.player_input.startswith('QUIT'):
                     return
                 elif self.player_input.startswith('MOVE'):
-                    print('Player input: ' + self.player_input)
+                    print('Player ' + current_player.symbol + ' input: ' + self.player_input)
                     self.process_move()
             except ConnectionResetError:
                 self.opponent.conn.sendall('OTHER_PLAYER_LEFT'.encode())
@@ -132,7 +132,7 @@ def main():
     server_address = (server_ip, server_port)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    # sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(server_address)
     print('Server now running on ' + server_ip + ':' + str(server_port))
 
