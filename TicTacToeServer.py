@@ -92,12 +92,17 @@ class PlayerThread:
 
     def read_command(self):
         while True:
-            self.player_input = self.conn.recv(2048).decode()
-            if self.player_input.startswith('QUIT'):
-                return
-            elif self.player_input.startswith('MOVE'):
-                print('Player input: ' + self.player_input)
-                self.process_move()
+            try:
+                self.player_input = self.conn.recv(2048).decode()
+                if self.player_input.startswith('QUIT'):
+                    return
+                elif self.player_input.startswith('MOVE'):
+                    print('Player input: ' + self.player_input)
+                    self.process_move()
+            except ConnectionResetError:
+                self.opponent.conn.sendall('OTHER_PLAYER_LEFT'.encode())
+            except OSError:
+                print()
 
     def process_move(self):
         try:
@@ -105,10 +110,12 @@ class PlayerThread:
             move(loc, self)
             self.conn.sendall('VALID_MOVE'.encode())
             if winner():
+                print(current_player.opponent.symbol + ' has won the game')
                 self.conn.sendall('VICTORY'.encode())
                 self.opponent.conn.sendall('DEFEAT'.encode())
                 self.conn.close()
             elif full_board():
+                print('Game ended in a tie')
                 self.conn.sendall('TIE'.encode())
                 self.opponent.conn.sendall('TIE'.encode())
                 self.conn.close()
