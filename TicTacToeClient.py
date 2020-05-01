@@ -5,8 +5,13 @@ MSG_LEN = 2048
 
 class ClientInterface:
     def get_move(self):
-        move = input('Where do you want to move?')
-        return int(move)
+        try:
+            move = int(input('Where do you want to move?\n'))
+            if move < 0 or move > 9:
+                move = -1
+        except ValueError:
+            move = -1
+        return move
 
     def show_msg(self, msg):
         print(msg)
@@ -26,15 +31,18 @@ class TicTacToeClient:
     
     def play(self):
         response : str = self.recv_msg()
-        print('Initial response: ' + response)
-        mark = response[8]
+        mark = response.split(' ')[2]
         opponent_mark = 'O' if mark == 'X' else 'X'
         self.io.show_msg('You are player ' + mark)
 
-        # O goes first
-        if mark == 'O':
+        if mark == 'X':
+            response: str = self.recv_msg()
+            self.io.show_msg(response[4:])
+            response: str = self.recv_msg()
+            self.io.show_msg(response[4:])
             self.play_move()
-            
+        else:
+            self.io.show_msg('Waiting for opponent to move...')
         while 1:
             response = self.recv_msg()
             if response == '':
@@ -47,10 +55,14 @@ class TicTacToeClient:
             elif response.startswith('OPPONENT_MOVED'):
                 loc = int(response[15:])
                 self.board[loc] = opponent_mark
-                self.io.show_board(self.board)
                 self.io.show_msg('Opponent moved, your turn.')
+                self.io.show_board(self.board)
+                self.play_move()
             elif response.startswith('MSG'):
                 self.io.show_msg(response[4:])
+            elif response.startswith('INVALID'):
+                self.io.show_msg(response[8:])
+                self.play_move()
             elif response.startswith('VICTORY'):
                 self.io.show_msg('You win!')
                 break
@@ -63,16 +75,17 @@ class TicTacToeClient:
             elif response.startswith('OTHER_PLAYER_LEFT'):
                 self.io.show_msg('Other player left.')
                 break
-
-            self.play_move()
         
         self.send_msg('QUIT')
         self.io.show_msg('Game has ended.')
 
     def play_move(self):
-        self.current_square = self.io.get_move()
-        msg = 'MOVE ' + self.current_square
+        move = self.io.get_move()
+        msg = 'MOVE ' + str(move)
+        self.current_square = move
         self.send_msg(msg)
+
+
 
     def send_msg(self, msg: str):
         self.conn.sendall(msg.encode())

@@ -2,13 +2,11 @@ import socket
 import argparse
 
 import threading
-from threading import Thread
 
 server_ip = '127.0.0.1'
 server_port = 25560
 board = [None] * 9
 current_player = None
-client_lock = threading.Lock()
 
 
 def read_arguments():
@@ -32,11 +30,13 @@ def move(loc, player):
     global current_player
 
     if player is not current_player:
-        player.conn.send('MSG Not your turn'.encode())
+        raise Exception('INVALID Not your turn')
     elif player.opponent is None:
-        player.conn.send('MSG Waiting for an opponent'.encode())
+        raise Exception('INVALID Waiting for an opponent')
     elif board[loc] is not None:
-        player.conn.send('MSG Illegal move, box already filled'.encode())
+        raise Exception('INVALID Illegal move, box already filled')
+    elif loc < 0 or loc > 8:
+        raise Exception('INVALID Illegal input, enter a valid move 0-8')
     board[loc] = current_player
     current_player = current_player.opponent
 
@@ -60,19 +60,19 @@ def winner():
 
 
 def RunPlayer(conn, client_ip, client_port, symbol):
-    PlayerThread(conn, client_ip, client_port, symbol).start()
+    PlayerThread(conn, client_ip, client_port, symbol)
 
 
-class PlayerThread(Thread):
+class PlayerThread:
     opponent = None
     player_input = None
 
     def __init__(self, conn, ip, port, symbol):
-        Thread.__init__(self)
         self.ip = ip
         self.port = port
         self.symbol = symbol
         self.conn = conn
+        self.run()
 
     def run(self):
         self.setup()
@@ -81,39 +81,46 @@ class PlayerThread(Thread):
     def setup(self):
         global current_player
 
-        self.player_input = self.conn.recv(2048).decode()
-        self.conn.send(('Welcome Player ' + self.symbol).encode())
+        self.conn.sendall(('Welcome Player ' + self.symbol).encode())
         if self.symbol == 'X':
             current_player = self
-            self.conn.send('MSG Waiting for opponent to connect'.encode())
+            self.conn.sendall('MSG Waiting for opponent to connect'.encode())
         else:
-            opponent = current_player
-            opponent.opponent = self
-            self.conn.send('MSG Your turn'.encode())
+            self.opponent = current_player
+            self.opponent.opponent = self
+            self.opponent.conn.sendall('MSG Opponent connected'.encode())
 
     def read_command(self):
-        if self.player_input.startswith('QUIT'):
-            return
-        elif self.player_input.startswith('MOVE'):
-            self.process_move()
+        while True:
+            self.player_input = self.conn.recv(2048).decode()
+            if self.player_input.startswith('QUIT'):
+                return
+            elif self.player_input.startswith('MOVE'):
+                print('Player input: ' + self.player_input)
+                self.process_move()
 
     def process_move(self):
-        loc = int(self.player_input[5:])
-        move(loc, self)
-        move_message = ('OPPONENT_MOVED ' + str(loc)).encode()
-        self.conn.send(move_message)
-        if winner():
-            self.conn.send('Victory'.encode())
-            self.opponent.conn.send('DEFEAT'.encode())
-        elif full_board():
-            self.conn.send('TIE'.encode())
-            self.opponent.conn.send('TIE'.encode())
+        try:
+            loc = int(self.player_input[5:])
+            move(loc, self)
+            self.conn.sendall('VALID_MOVE'.encode())
+            if winner():
+                self.conn.sendall('VICTORY'.encode())
+                self.opponent.conn.sendall('DEFEAT'.encode())
+                self.conn.close()
+            elif full_board():
+                self.conn.sendall('TIE'.encode())
+                self.opponent.conn.sendall('TIE'.encode())
+                self.conn.close()
+            self.opponent.conn.sendall(('OPPONENT_MOVED ' + str(loc)).encode())
+        except Exception as e:
+            self.conn.sendall(e.args[0].encode())
 
 
 def main():
     global server_ip, server_port
 
-    count = False
+    count = 0
     read_arguments()
     server_address = (server_ip, server_port)
 
@@ -124,13 +131,18 @@ def main():
 
     while True:
         sock.listen(1000)
-        print('Waiting for players to join...')
-        (conn, (client_ip, client_port)) = sock.accept()
-        if not count:
+        if count == 0:
+            print('Waiting for players to join...')
+            (conn, (client_ip, client_port)) = sock.accept()
             threading.Thread(target=RunPlayer, args=[conn, client_ip, client_port, 'X']).start()
-            count = True
-        else:
-            threading.Thread(target=RunPlayer, args='O').start()
+            print('Player 1 joined')
+            count += 1
+        elif count == 1:
+            print('Waiting for player 2 to join...')
+            (conn, (client_ip, client_port)) = sock.accept()
+            threading.Thread(target=RunPlayer, args=[conn, client_ip, client_port, 'O']).start()
+            print('Player 2 joined')
+            count += 1
 
 
 if __name__ == '__main__':
