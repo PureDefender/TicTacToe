@@ -138,13 +138,13 @@ def main():
 
     while True:
         sock.listen(1000)
-        if count == 0:
+        if count % 2 == 0:
             print('Waiting for players to join...')
             (conn, (client_ip, client_port)) = sock.accept()
             threading.Thread(target=RunPlayer, args=[conn, client_ip, client_port, 'X']).start()
             print('Player 1 joined')
             count += 1
-        elif count == 1:
+        elif count % 2 ==  1:
             print('Waiting for player 2 to join...')
             (conn, (client_ip, client_port)) = sock.accept()
             threading.Thread(target=RunPlayer, args=[conn, client_ip, client_port, 'O']).start()
