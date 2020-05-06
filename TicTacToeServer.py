@@ -113,6 +113,7 @@ class PlayerThread:
                 print(current_player.opponent.symbol + ' has won the game')
                 self.conn.sendall('VICTORY'.encode())
                 self.opponent.conn.sendall('DEFEAT'.encode())
+                self.opponent.conn.sendall(('OPPONENT_MOVED ' + str(loc)).encode())
                 self.conn.close()
             elif full_board():
                 print('Game ended in a tie')
@@ -132,7 +133,6 @@ def main():
     server_address = (server_ip, server_port)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(server_address)
     print('Server now running on ' + server_ip + ':' + str(server_port))
 
