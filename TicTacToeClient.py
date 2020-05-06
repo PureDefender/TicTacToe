@@ -2,7 +2,7 @@ import os
 import socket
 import threading
 from tkinter import *
-
+from tkinter import messagebox
 # Set message length
 MSG_LEN = 2048
 
@@ -22,17 +22,25 @@ root.geometry("325x465")
 # set the title for frame
 root.title("Tic Tac Toe")
 
+
+def on_closing():
+    if messagebox.askokcancel("Quit", "Do you want to quit?"):
+        root.destroy()
+        os._exit(1)
+
+
+
+root.protocol("WM_DELETE_WINDOW", on_closing)
+
 menu = Frame(root)
 boardGame = Frame(root)
 
-
 for frame in (menu, boardGame):
     frame.grid(row=0, column=0, sticky='news')
-mainlabel= Label(menu,text="Please Enter Server Address and Port")
+mainlabel = Label(menu, text="Please Enter Server Address and Port")
 lableOne = LabelFrame(menu, text="Server Address")
 lableTwo = LabelFrame(menu, text="Server Port")
 submit_info_button = Button(menu, text="Submit", padx=10, pady=10, command=lambda: raise_frame(boardGame))
-
 
 serverAddressEntry = Entry(lableOne)
 serverPortEntry = Entry(lableTwo)
@@ -42,11 +50,10 @@ serverPortEntry.grid(row=1, column=3)
 lableOne.grid(row=2, column=3)
 lableTwo.grid(row=3, column=3)
 mainlabel.place(relx=.5, rely=.1, anchor=CENTER)
-lableOne.place(relx=0.5, rely=0.2,anchor=CENTER)
-lableTwo.place(relx=0.5, rely=0.3,anchor=CENTER)
+lableOne.place(relx=0.5, rely=0.2, anchor=CENTER)
+lableTwo.place(relx=0.5, rely=0.3, anchor=CENTER)
 submit_info_button.grid(row=4, column=3)
 submit_info_button.place(relx=0.5, rely=0.5, anchor=CENTER)
-
 
 raise_frame(menu)
 # object for holding the move integer for get_move() function
@@ -74,7 +81,7 @@ boardButton_7 = Button(boardGame, text="7", image=emptySpaceIcon, padx=30, pady=
 boardButton_8 = Button(boardGame, text="8", image=emptySpaceIcon, padx=30, pady=20,
                        command=lambda: boardButtonClicked(8))
 
-quitButton_0 = Button(boardGame, text="Quit", padx=30, pady=30, command=lambda : quitButton())
+quitButton_0 = Button(boardGame, text="Quit", padx=30, pady=30, command=lambda: quitButton())
 serverMessages.grid(columnspan=3, ipadx=70, ipady=20)
 boardButton_0.grid(row=1, column=0)
 boardButton_1.grid(row=1, column=1)
@@ -243,10 +250,9 @@ class TicTacToeClient:
 
 
 if __name__ == "__main__":
-
-    #if len(sys.argv) != 3:
-     #   print('Usage:\n' + sys.argv[0] + ' server_ip server_port')
-      #  sys.exit()
+    # if len(sys.argv) != 3:
+    #   print('Usage:\n' + sys.argv[0] + ' server_ip server_port')
+    #  sys.exit()
     root.wait_variable(serverAddress)
     address = (serverAddress.get(), serverPort.get())
     client = TicTacToeClient(address)
