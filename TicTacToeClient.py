@@ -179,6 +179,7 @@ class TicTacToeClient:
         mark = response.split(' ')[2]
         opponent_mark = 'O' if mark == 'X' else 'X'
         self.io.show_msg('You are player ' + mark)
+        root.title("Tic Tac Toe - Player " + mark)
 
         if mark == 'X':
             response: str = self.recv_msg()
