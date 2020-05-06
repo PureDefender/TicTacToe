@@ -212,6 +212,10 @@ class TicTacToeClient:
                 self.io.show_msg('You win!')
                 break
             elif response.startswith('DEFEAT'):
+                response: str = self.recv_msg()
+                loc = int(response[15:])
+                self.board[loc] = opponent_mark
+                self.io.show_board(self.board)
                 self.io.show_msg('You lose!')
                 break
             elif response.startswith('TIE'):
@@ -222,7 +226,7 @@ class TicTacToeClient:
                 break
 
         self.send_msg('QUIT')
-        self.io.show_msg('Game has ended.')
+        # self.io.show_msg('Game has ended.')
 
     def play_move(self):
         move = self.io.get_move()
