@@ -113,7 +113,6 @@ class PlayerThread:
                 print(current_player.opponent.symbol + ' has won the game')
                 self.conn.sendall('VICTORY'.encode())
                 self.opponent.conn.sendall('DEFEAT'.encode())
-                self.opponent.conn.sendall(('OPPONENT_MOVED ' + str(loc)).encode())
                 self.conn.close()
             elif full_board():
                 print('Game ended in a tie')
