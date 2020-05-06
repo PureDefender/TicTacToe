@@ -101,6 +101,7 @@ class PlayerThread:
                     self.process_move()
             except ConnectionResetError:
                 self.opponent.conn.sendall('OTHER_PLAYER_LEFT'.encode())
+                break;
             except OSError:
                 print()
 
